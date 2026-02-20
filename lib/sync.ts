@@ -1,4 +1,4 @@
-import { format, startOfMonth, subMonths, subDays } from 'date-fns';
+import { differenceInCalendarDays, format, startOfMonth, subMonths } from 'date-fns';
 import { datadisService } from '@/lib/datadis';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 
@@ -171,7 +171,7 @@ export async function syncConsumptionFromDatadis(
   const db = supabaseAdmin || supabase;
   const ownerNif = process.env.DATADIS_USERNAME || '';
   const staleDays = options.staleDays ?? 0;
-  const staleThreshold = staleDays > 0 ? subDays(new Date(), staleDays) : null;
+  const now = new Date();
 
   const { data: supplies, error: suppliesError } = await db.from('client_supplies').select('*');
   if (suppliesError) throw suppliesError;
@@ -190,9 +190,10 @@ export async function syncConsumptionFromDatadis(
 
   for (const supply of supplies) {
     try {
-      if (staleThreshold && supply.last_sync) {
+      if (staleDays > 0 && supply.last_sync) {
         const lastSyncDate = new Date(supply.last_sync);
-        if (lastSyncDate > staleThreshold) {
+        const daysSinceLastSync = differenceInCalendarDays(now, lastSyncDate);
+        if (daysSinceLastSync < staleDays) {
           syncResults.suppliesSkippedFresh++;
           continue;
         }

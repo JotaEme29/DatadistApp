@@ -28,6 +28,16 @@ The app is configured so dashboard reads come from Supabase, not directly from D
    - Daily 03:00 UTC: `0 3 * * *` -> `/api/cron/weekly-sync`
 3. Vercel will call cron with `Authorization: Bearer <CRON_SECRET>`.
 
+### Daily automation on Netlify (every 24h)
+
+- Netlify does not read `vercel.json`, so Vercel cron config is ignored there.
+- This repo includes a Netlify Scheduled Function:
+  - `netlify/functions/weekly-sync.ts`
+  - schedule configured in `netlify.toml` as `0 3 * * *`
+- The Netlify function runs both steps:
+  - `POST /api/sync/clients`
+  - `POST /api/sync/consumption` with `{ "staleDays": 1 }`
+
 ### Local manual sync
 
 - Full sync: trigger button in UI or `POST /api/sync/clients` + `POST /api/sync/consumption`

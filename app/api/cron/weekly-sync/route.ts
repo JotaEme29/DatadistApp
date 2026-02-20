@@ -3,18 +3,25 @@ import { syncClientsFromDatadis, syncConsumptionFromDatadis } from '@/lib/sync';
 
 export const maxDuration = 300;
 
-function isAuthorized(request: Request): boolean {
+function getAuthorizationResult(request: Request): { ok: boolean; reason?: string } {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
+  if (!secret) {
+    return { ok: false, reason: 'CRON_SECRET is not configured' };
+  }
 
   const authHeader = request.headers.get('authorization');
-  return authHeader === `Bearer ${secret}`;
+  if (authHeader !== `Bearer ${secret}`) {
+    return { ok: false, reason: 'Invalid Authorization header' };
+  }
+
+  return { ok: true };
 }
 
 export async function GET(request: Request) {
   try {
-    if (!isAuthorized(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = getAuthorizationResult(request);
+    if (!auth.ok) {
+      return NextResponse.json({ error: 'Unauthorized', details: auth.reason }, { status: 401 });
     }
 
     const clients = await syncClientsFromDatadis();
