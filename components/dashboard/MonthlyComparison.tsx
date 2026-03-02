@@ -29,7 +29,8 @@ export default function MonthlyComparison({ data }: MonthlyComparisonProps) {
         deltaPct: deltaPct === null ? null : Number(deltaPct.toFixed(1)),
         positive: deltaPct !== null && deltaPct > 0,
       };
-    });
+    })
+    .slice(-12);
 
   const latest = chartData[chartData.length - 1];
 
