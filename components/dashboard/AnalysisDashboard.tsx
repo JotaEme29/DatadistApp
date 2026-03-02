@@ -5,6 +5,7 @@ import { AnalysisResult } from '@/lib/analysis';
 
 interface AnalysisDashboardProps {
   analysis: AnalysisResult;
+  title?: string;
 }
 
 function alertStyles(level: 'high' | 'medium' | 'low') {
@@ -19,7 +20,7 @@ function metricTone(value: number, thresholds: [number, number]) {
   return 'text-emerald-700';
 }
 
-export default function AnalysisDashboard({ analysis }: AnalysisDashboardProps) {
+export default function AnalysisDashboard({ analysis, title }: AnalysisDashboardProps) {
   const trendLabel =
     analysis.monthlyTrendPct === null
       ? 'Sin comparativa'
@@ -28,6 +29,11 @@ export default function AnalysisDashboard({ analysis }: AnalysisDashboardProps) 
   return (
     <section className="space-y-4">
       <article className="rounded-3xl bg-white/80 backdrop-blur-sm ring-1 ring-slate-200 p-4 md:p-5">
+        {title && (
+          <h2 className="mb-4 text-xs font-semibold text-slate-800 border-b border-slate-100 pb-2">
+            {title}
+          </h2>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-wide text-slate-500">Consumo total</p>

@@ -36,6 +36,10 @@ export default function Dashboard() {
 
   const analysis = useMemo(() => analyzeConsumption(consumptionData), [consumptionData]);
 
+  const dateRangeLabel = selectedMonth
+    ? `Resumen de ${new Date(selectedMonth + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
+    : 'Resumen de los últimos 12 meses';
+
   async function fetchSupplies(): Promise<SupplyRow[]> {
     const response = await fetch('/api/supplies');
     if (!response.ok) throw new Error('No fue posible cargar los suministros.');
@@ -158,7 +162,7 @@ export default function Dashboard() {
           <p className="text-xs text-slate-600">
             Paso 1: Resumen ejecutivo para abrir la conversación con el cliente.
           </p>
-          <AnalysisDashboard analysis={analysis} />
+          <AnalysisDashboard analysis={analysis} title={dateRangeLabel} />
         </div>
       );
     }
@@ -256,8 +260,6 @@ export default function Dashboard() {
                 type="month"
                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-cyan-500"
                 value={selectedMonth}
-                min="2020-01"
-                max={new Date().toISOString().slice(0, 7)}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 title="Filtrar por mes"
               />
@@ -321,7 +323,7 @@ export default function Dashboard() {
             </section>
           ) : (
             <>
-              <AnalysisDashboard analysis={analysis} />
+              <AnalysisDashboard analysis={analysis} title={dateRangeLabel} />
               <AdvancedAnalyticsEcharts data={consumptionData} />
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Vista técnica complementaria</h3>
