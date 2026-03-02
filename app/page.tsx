@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import AnalysisDashboard from '@/components/dashboard/AnalysisDashboard';
-import AdvancedAnalyticsEcharts from '@/components/dashboard/AdvancedAnalyticsEcharts';
+import AdvancedAnalyticsEcharts, { ADVANCED_ANALYTICS_CARD_COUNT } from '@/components/dashboard/AdvancedAnalyticsEcharts';
 import ConsumptionChart from '@/components/dashboard/ConsumptionChart';
 import MonthlyComparison from '@/components/dashboard/MonthlyComparison';
 import ConsumptionHeatmap from '@/components/dashboard/ConsumptionHeatmap';
@@ -56,7 +56,7 @@ export default function Dashboard() {
       const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
       let specificMonthUrl = '';
-      let yearlyUrl = `/api/consumption?cups=${cups}&startDate=${yearAgoStr}&endDate=${todayStr}`;
+      const yearlyUrl = `/api/consumption?cups=${cups}&startDate=${yearAgoStr}&endDate=${todayStr}`;
 
       if (month) {
         // month comes as 'YYYY-MM'
@@ -149,7 +149,7 @@ export default function Dashboard() {
     }
   }, [presentationMode]);
 
-  const slideCount = 9;
+  const slideCount = 4 + ADVANCED_ANALYTICS_CARD_COUNT;
 
   function renderPresentationSlide() {
     if (currentSlide === 0) {
@@ -182,7 +182,7 @@ export default function Dashboard() {
         </div>
       );
     }
-    if (currentSlide >= 3 && currentSlide <= 7) {
+    if (currentSlide >= 3 && currentSlide < 3 + ADVANCED_ANALYTICS_CARD_COUNT) {
       return (
         <div className="space-y-3">
           <p className="text-xs text-slate-600">

@@ -13,6 +13,7 @@ interface AdvancedAnalyticsEchartsProps {
   data: ConsumptionPoint[];
   presentationIndex?: number;
 }
+export const ADVANCED_ANALYTICS_CARD_COUNT = 8;
 
 function toDateTime(date: string, time: string): Date {
   const normalizedTime = time.length === 5 ? `${time}:00` : time;
@@ -109,6 +110,52 @@ export default function AdvancedAnalyticsEcharts({ data, presentationIndex }: Ad
   const weekdayAvg = weekdayDailyTotals.map((value, index) =>
     weekdayDailyCounts[index] > 0 ? Number((value / weekdayDailyCounts[index]).toFixed(2)) : 0
   );
+
+  const hourlyWeekdayTotals = Array(24).fill(0) as number[];
+  const hourlyWeekdayCounts = Array(24).fill(0) as number[];
+  const hourlyWeekendTotals = Array(24).fill(0) as number[];
+  const hourlyWeekendCounts = Array(24).fill(0) as number[];
+  const hourlyBuckets = Array.from({ length: 24 }, () => [] as number[]);
+
+  for (const row of rows) {
+    const hour = Number.parseInt(row.time.slice(0, 2), 10);
+    if (!Number.isFinite(hour) || hour < 0 || hour > 23) continue;
+
+    hourlyBuckets[hour].push(row.value);
+
+    const weekday = new Date(`${row.date}T00:00:00`).getDay();
+    const isWeekend = weekday === 0 || weekday === 6;
+    if (isWeekend) {
+      hourlyWeekendTotals[hour] += row.value;
+      hourlyWeekendCounts[hour] += 1;
+    } else {
+      hourlyWeekdayTotals[hour] += row.value;
+      hourlyWeekdayCounts[hour] += 1;
+    }
+  }
+
+  const weekdayProfile = hourlyWeekdayTotals.map((value, hour) =>
+    hourlyWeekdayCounts[hour] > 0 ? Number((value / hourlyWeekdayCounts[hour]).toFixed(3)) : 0
+  );
+  const weekendProfile = hourlyWeekendTotals.map((value, hour) =>
+    hourlyWeekendCounts[hour] > 0 ? Number((value / hourlyWeekendCounts[hour]).toFixed(3)) : 0
+  );
+  const hourlyMin = hourlyBuckets.map((bucket) =>
+    bucket.length > 0 ? Number(Math.min(...bucket).toFixed(3)) : 0
+  );
+  const hourlyMax = hourlyBuckets.map((bucket) =>
+    bucket.length > 0 ? Number(Math.max(...bucket).toFixed(3)) : 0
+  );
+  const hourlySpread = hourlyMax.map((max, hour) => Number((max - hourlyMin[hour]).toFixed(3)));
+
+  const sortedLoad = rows
+    .map((item) => item.value)
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => b - a);
+  const loadDurationData = sortedLoad.map((value, index) => {
+    const percentile = sortedLoad.length > 1 ? (index / (sortedLoad.length - 1)) * 100 : 0;
+    return [Number(percentile.toFixed(2)), Number(value.toFixed(3))];
+  });
 
   const bandData = [...bands.entries()].map(([key, value]) => ({
     name: BAND_LABELS[key],
@@ -257,6 +304,113 @@ export default function AdvancedAnalyticsEcharts({ data, presentationIndex }: Ad
     ],
   };
 
+  const profileOption: EChartsOption = {
+    tooltip: { ...baseTooltip, trigger: 'axis' },
+    legend: { top: 0, textStyle: { color: '#64748b', fontSize: 10 } },
+    grid: { left: 34, right: 16, top: 28, bottom: 24 },
+    xAxis: {
+      type: 'category',
+      data: Array.from({ length: 24 }, (_, hour) => hourLabel(hour)),
+      axisLabel: { color: '#64748b', fontSize: 9, interval: 1 },
+      axisLine: { lineStyle: { color: '#cbd5e1' } },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: '#64748b', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    series: [
+      {
+        name: 'Laborable',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 2, color: '#0ea5e9' },
+        data: weekdayProfile,
+      },
+      {
+        name: 'Fin de semana',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 2, color: '#f59e0b' },
+        data: weekendProfile,
+      },
+    ],
+  };
+
+  const spreadOption: EChartsOption = {
+    tooltip: { ...baseTooltip, trigger: 'axis' },
+    legend: { top: 0, textStyle: { color: '#64748b', fontSize: 10 } },
+    grid: { left: 34, right: 16, top: 28, bottom: 24 },
+    xAxis: {
+      type: 'category',
+      data: Array.from({ length: 24 }, (_, hour) => hourLabel(hour)),
+      axisLabel: { color: '#64748b', fontSize: 9, interval: 1 },
+      axisLine: { lineStyle: { color: '#cbd5e1' } },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { color: '#64748b', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    series: [
+      {
+        name: 'Minimo',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 1.4, color: '#10b981' },
+        data: hourlyMin,
+      },
+      {
+        name: 'Promedio',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 2.2, color: '#2563eb' },
+        data: hourlyAvg.map((value) => Number(value.toFixed(3))),
+      },
+      {
+        name: 'Maximo',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 1.4, color: '#ef4444' },
+        data: hourlyMax,
+      },
+    ],
+  };
+
+  const loadDurationOption: EChartsOption = {
+    tooltip: { ...baseTooltip, trigger: 'axis', valueFormatter: (value) => `${value} kWh` },
+    grid: { left: 34, right: 16, top: 18, bottom: 28 },
+    xAxis: {
+      type: 'value',
+      name: '% horas',
+      nameTextStyle: { color: '#64748b', fontSize: 10 },
+      axisLabel: { color: '#64748b', fontSize: 10, formatter: '{value}%' },
+      splitLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    yAxis: {
+      type: 'value',
+      name: 'kWh',
+      nameTextStyle: { color: '#64748b', fontSize: 10 },
+      axisLabel: { color: '#64748b', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#e2e8f0' } },
+    },
+    series: [
+      {
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { width: 2.5, color: '#7c3aed' },
+        areaStyle: { color: 'rgba(124,58,237,0.12)' },
+        data: loadDurationData,
+      },
+    ],
+  };
+
   const chartCards = [
     {
       title: '¿En qué momento del día consume más?',
@@ -286,6 +440,26 @@ export default function AdvancedAnalyticsEcharts({ data, presentationIndex }: Ad
       title: 'Días atípicos que conviene revisar con el cliente',
       subtitle: 'La línea muestra consumo diario; puntos rojos marcan días fuera de patrón.',
       option: dailyOption,
+      height: 290,
+    },
+    {
+      title: 'Laborables vs fin de semana por hora',
+      subtitle: 'Comparativa de patrón operativo para detectar oportunidades de ajuste.',
+      option: profileOption,
+      height: 290,
+    },
+    {
+      title: 'Banda de variabilidad horaria',
+      subtitle: `Diferencia media min-max por hora: ${Number(
+        hourlySpread.reduce((acc, value) => acc + value, 0) / Math.max(1, hourlySpread.length)
+      ).toFixed(3)} kWh.`,
+      option: spreadOption,
+      height: 290,
+    },
+    {
+      title: 'Curva de duración de carga',
+      subtitle: 'Ordena todas las horas de mayor a menor para separar base y picos.',
+      option: loadDurationOption,
       height: 290,
     },
   ] as const;
