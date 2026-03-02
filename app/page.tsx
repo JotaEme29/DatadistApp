@@ -142,6 +142,17 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Generar opciones de los últimos 36 meses
+  const monthOptions = useMemo(() => {
+    return Array.from({ length: 36 }).map((_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const value = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+      const label = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+      return { value, label: label.charAt(0).toUpperCase() + label.slice(1) };
+    });
+  }, []);
+
   useEffect(() => {
     if (!selectedCups) return;
     fetchConsumption(selectedCups, selectedMonth);
@@ -256,22 +267,19 @@ export default function Dashboard() {
             )}
             
             <div className="flex items-center gap-1">
-              <input
-                type="month"
+              <select
                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-cyan-500"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 title="Filtrar por mes"
-              />
-              {selectedMonth && (
-                <button
-                  onClick={() => setSelectedMonth('')}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs text-slate-600 hover:bg-slate-300"
-                  title="Ver último año completo"
-                >
-                  ✕
-                </button>
-              )}
+              >
+                <option value="">Resumen anual (Últimos 12 meses)</option>
+                {monthOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <button
               onClick={() => setPresentationMode((value) => !value)}
