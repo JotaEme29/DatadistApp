@@ -60,7 +60,8 @@ export default function Dashboard() {
         endStr = `${year}-${pad(m)}-${pad(endDate.getDate())}`;
       } else {
         const now = new Date();
-        const start = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+        // Cargar todo el histórico disponible (ej. desde hace 3 años)
+        const start = new Date(now.getFullYear() - 3, now.getMonth(), 1);
         startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-01`;
         endStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
       }

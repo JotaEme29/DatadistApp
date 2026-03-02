@@ -199,7 +199,7 @@ export async function syncConsumptionFromDatadis(
         }
       }
 
-      let startDate = subMonths(new Date(), 12);
+      let startDate = subMonths(new Date(), 36); // Reclamar hasta 3 años de histórico
       if (supply.last_sync) {
         const lastSyncMonth = startOfMonth(new Date(supply.last_sync));
         const twoMonthsAgo = subMonths(new Date(), 2);
