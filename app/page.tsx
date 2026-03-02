@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [selectedCups, setSelectedCups] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [consumptionData, setConsumptionData] = useState<ConsumptionPoint[]>([]);
+  const [yearlyConsumptionData, setYearlyConsumptionData] = useState<ConsumptionPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingConsumption, setLoadingConsumption] = useState(false);
   const [error, setError] = useState<string>('');
@@ -47,8 +48,15 @@ export default function Dashboard() {
     try {
       let startStr = '';
       let endStr = '';
-
       const pad = (n: number) => n.toString().padStart(2, '0');
+
+      const now = new Date();
+      const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+      const yearAgoStr = `${yearAgo.getFullYear()}-${pad(yearAgo.getMonth() + 1)}-01`;
+      const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+      let specificMonthUrl = '';
+      let yearlyUrl = `/api/consumption?cups=${cups}&startDate=${yearAgoStr}&endDate=${todayStr}`;
 
       if (month) {
         // month comes as 'YYYY-MM'
@@ -58,29 +66,43 @@ export default function Dashboard() {
         const endDate = new Date(year, m, 0); // Last day of that month
         startStr = `${year}-${pad(m)}-01`;
         endStr = `${year}-${pad(m)}-${pad(endDate.getDate())}`;
+        specificMonthUrl = `/api/consumption?cups=${cups}&startDate=${startStr}&endDate=${endStr}`;
       } else {
-        const now = new Date();
-        // Cargar todo el histórico disponible (ej. desde hace 3 años)
+        // Cargar todo el histórico disponible (ej. desde hace 3 años) para ver tendencias en Echarts etc
         const start = new Date(now.getFullYear() - 3, now.getMonth(), 1);
         startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-01`;
-        endStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        endStr = todayStr;
+        specificMonthUrl = `/api/consumption?cups=${cups}&startDate=${startStr}&endDate=${endStr}`;
       }
 
-      const params = new URLSearchParams({
-        cups,
-        startDate: startStr,
-        endDate: endStr,
-      });
+      const [mainRes, yearlyRes] = await Promise.all([
+        fetch(specificMonthUrl),
+        month ? fetch(yearlyUrl) : Promise.resolve(null)
+      ]);
 
-      const response = await fetch(`/api/consumption?${params.toString()}`);
-      if (!response.ok) throw new Error('No fue posible cargar consumo.');
-      const rows = (await response.json()) as ConsumptionApiRow[];
-      const mapped = rows.map((row) => ({
+      if (!mainRes.ok || (yearlyRes && !yearlyRes.ok)) {
+        throw new Error('No fue posible cargar consumo.');
+      }
+
+      const mainRows = (await mainRes.json()) as ConsumptionApiRow[];
+      const mainMapped = mainRows.map((row) => ({
         date: row.date,
         time: row.time,
         consumptionKWh: Number(row.consumption_kwh) || 0,
       }));
-      setConsumptionData(mapped);
+      setConsumptionData(mainMapped);
+
+      if (yearlyRes) {
+        const yearlyRows = (await yearlyRes.json()) as ConsumptionApiRow[];
+        const yearlyMapped = yearlyRows.map((row) => ({
+          date: row.date,
+          time: row.time,
+          consumptionKWh: Number(row.consumption_kwh) || 0,
+        }));
+        setYearlyConsumptionData(yearlyMapped);
+      } else {
+        setYearlyConsumptionData(mainMapped);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error desconocido cargando consumo.';
       setError(message);
@@ -303,7 +325,7 @@ export default function Dashboard() {
                 <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Vista técnica complementaria</h3>
                 <ConsumptionChart data={consumptionData} />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <MonthlyComparison data={consumptionData} />
+                  <MonthlyComparison data={yearlyConsumptionData} />
                   <div className="lg:col-span-2">
                     <ConsumptionHeatmap data={consumptionData} />
                   </div>
