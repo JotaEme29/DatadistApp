@@ -5,6 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import AnalysisDashboard from '@/components/dashboard/AnalysisDashboard';
 import AdvancedAnalyticsEcharts from '@/components/dashboard/AdvancedAnalyticsEcharts';
 import ConsumptionChart from '@/components/dashboard/ConsumptionChart';
+import MonthlyComparison from '@/components/dashboard/MonthlyComparison';
 import ConsumptionHeatmap from '@/components/dashboard/ConsumptionHeatmap';
 import SyncButton from '@/components/dashboard/SyncButton';
 import { analyzeConsumption, ConsumptionPoint } from '@/lib/analysis';
@@ -300,7 +301,12 @@ export default function Dashboard() {
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Vista técnica complementaria</h3>
                 <ConsumptionChart data={consumptionData} />
-                <ConsumptionHeatmap data={consumptionData} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <MonthlyComparison data={consumptionData} />
+                  <div className="lg:col-span-2">
+                    <ConsumptionHeatmap data={consumptionData} />
+                  </div>
+                </div>
               </section>
             </>
           )}
