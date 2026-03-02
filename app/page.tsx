@@ -256,6 +256,8 @@ export default function Dashboard() {
                 type="month"
                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-cyan-500"
                 value={selectedMonth}
+                min="2020-01"
+                max={new Date().toISOString().slice(0, 7)}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 title="Filtrar por mes"
               />

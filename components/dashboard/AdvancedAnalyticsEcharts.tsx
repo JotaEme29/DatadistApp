@@ -13,7 +13,7 @@ interface AdvancedAnalyticsEchartsProps {
   data: ConsumptionPoint[];
   presentationIndex?: number;
 }
-export const ADVANCED_ANALYTICS_CARD_COUNT = 8;
+export const ADVANCED_ANALYTICS_CARD_COUNT = 7;
 
 function toDateTime(date: string, time: string): Date {
   const normalizedTime = time.length === 5 ? `${time}:00` : time;
@@ -196,33 +196,6 @@ export default function AdvancedAnalyticsEcharts({ data, presentationIndex }: Ad
     ],
   };
 
-  const monthOption: EChartsOption = {
-    tooltip: { ...baseTooltip, trigger: 'axis' },
-    xAxis: {
-      type: 'category',
-      data: monthly.map((item) => item.month),
-      axisLabel: { color: '#64748b', fontSize: 10 },
-      axisLine: { lineStyle: { color: '#cbd5e1' } },
-    },
-    yAxis: {
-      type: 'value',
-      name: 'kWh/dia',
-      nameTextStyle: { color: '#64748b', fontSize: 10 },
-      axisLabel: { color: '#64748b', fontSize: 10 },
-      splitLine: { lineStyle: { color: '#e2e8f0' } },
-    },
-    series: [
-      {
-        type: 'line',
-        data: monthly.map((item) => item.kwh),
-        smooth: true,
-        symbol: 'circle',
-        symbolSize: 6,
-        lineStyle: { width: 2.5, color: '#0ea5e9' },
-        areaStyle: { color: 'rgba(14,165,233,0.15)' },
-      },
-    ],
-  };
 
   const weekdayOption: EChartsOption = {
     tooltip: { ...baseTooltip, trigger: 'axis' },
@@ -419,12 +392,6 @@ export default function AdvancedAnalyticsEcharts({ data, presentationIndex }: Ad
       height: 280,
     },
     {
-      title: '¿Cómo evoluciona su consumo mes a mes?',
-      subtitle: 'Evolución mensual para ver crecimiento o reducción.',
-      option: monthOption,
-      height: 280,
-    },
-    {
       title: '¿Qué días suele consumir más?',
       subtitle: 'Promedio de kWh por día de semana (unidad: kWh/dia).',
       option: weekdayOption,
@@ -534,12 +501,6 @@ export default function AdvancedAnalyticsEcharts({ data, presentationIndex }: Ad
           <ReactECharts option={chartCards[3].option} style={{ height: chartCards[3].height }} opts={svgOpts} notMerge lazyUpdate />
         </article>
       </div>
-
-      <article className="rounded-3xl bg-white/80 backdrop-blur-sm ring-1 ring-slate-200 p-4">
-        <h3 className="text-xs font-semibold text-slate-700">{chartCards[4].title}</h3>
-        <p className="mt-1 text-[11px] text-slate-500">{chartCards[4].subtitle}</p>
-        <ReactECharts option={chartCards[4].option} style={{ height: chartCards[4].height }} opts={svgOpts} notMerge lazyUpdate />
-      </article>
     </section>
   );
 }
