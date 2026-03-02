@@ -201,7 +201,11 @@ export async function syncConsumptionFromDatadis(
 
       let startDate = subMonths(new Date(), 12);
       if (supply.last_sync) {
-        startDate = startOfMonth(new Date(supply.last_sync));
+        const lastSyncMonth = startOfMonth(new Date(supply.last_sync));
+        const twoMonthsAgo = subMonths(new Date(), 2);
+        // Safely fetch from at least 2 meses atrás para no perder días del final del mes anterior 
+        // debido al retraso natural de Datadis.
+        startDate = lastSyncMonth < twoMonthsAgo ? lastSyncMonth : twoMonthsAgo;
       }
 
       const startStr = format(startDate, 'yyyy/MM');
