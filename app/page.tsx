@@ -24,6 +24,7 @@ interface ConsumptionApiRow {
 export default function Dashboard() {
   const [supplies, setSupplies] = useState<SupplyRow[]>([]);
   const [selectedCups, setSelectedCups] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [consumptionData, setConsumptionData] = useState<ConsumptionPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingConsumption, setLoadingConsumption] = useState(false);
@@ -40,15 +41,33 @@ export default function Dashboard() {
     return Array.isArray(rows) ? rows : [];
   }
 
-  async function fetchConsumption(cups: string) {
+  async function fetchConsumption(cups: string, month: string) {
     setLoadingConsumption(true);
     try {
-      const now = new Date();
-      const start = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+      let startStr = '';
+      let endStr = '';
+
+      const pad = (n: number) => n.toString().padStart(2, '0');
+
+      if (month) {
+        // month comes as 'YYYY-MM'
+        const [yearStr, monthStr] = month.split('-');
+        const year = Number(yearStr);
+        const m = Number(monthStr);
+        const endDate = new Date(year, m, 0); // Last day of that month
+        startStr = `${year}-${pad(m)}-01`;
+        endStr = `${year}-${pad(m)}-${pad(endDate.getDate())}`;
+      } else {
+        const now = new Date();
+        const start = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+        startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-01`;
+        endStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      }
+
       const params = new URLSearchParams({
         cups,
-        startDate: start.toISOString().split('T')[0],
-        endDate: now.toISOString().split('T')[0],
+        startDate: startStr,
+        endDate: endStr,
       });
 
       const response = await fetch(`/api/consumption?${params.toString()}`);
@@ -97,8 +116,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedCups) return;
-    fetchConsumption(selectedCups);
-  }, [selectedCups]);
+    fetchConsumption(selectedCups, selectedMonth);
+  }, [selectedCups, selectedMonth]);
 
   useEffect(() => {
     if (!presentationMode) {
@@ -190,7 +209,7 @@ export default function Dashboard() {
                   const exists = rows.some((row) => row.cups === selectedCups);
                   const next = exists ? selectedCups : rows[0].cups;
                   setSelectedCups(next);
-                  await fetchConsumption(next);
+                  await fetchConsumption(next, selectedMonth);
                 }
               }}
             />
@@ -207,6 +226,25 @@ export default function Dashboard() {
                 ))}
               </select>
             )}
+            
+            <div className="flex items-center gap-1">
+              <input
+                type="month"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-cyan-500"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                title="Filtrar por mes"
+              />
+              {selectedMonth && (
+                <button
+                  onClick={() => setSelectedMonth('')}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs text-slate-600 hover:bg-slate-300"
+                  title="Ver último año completo"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setPresentationMode((value) => !value)}
               className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
