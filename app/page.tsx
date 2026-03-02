@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import AnalysisDashboard from '@/components/dashboard/AnalysisDashboard';
-import AdvancedAnalyticsEcharts, { ADVANCED_ANALYTICS_CARD_COUNT } from '@/components/dashboard/AdvancedAnalyticsEcharts';
+import AdvancedAnalyticsEcharts from '@/components/dashboard/AdvancedAnalyticsEcharts';
 import ConsumptionChart from '@/components/dashboard/ConsumptionChart';
 import MonthlyComparison from '@/components/dashboard/MonthlyComparison';
 import ConsumptionHeatmap from '@/components/dashboard/ConsumptionHeatmap';
@@ -142,17 +142,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Generar opciones de los últimos 36 meses
-  const monthOptions = useMemo(() => {
-    return Array.from({ length: 36 }).map((_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const value = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-      const label = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-      return { value, label: label.charAt(0).toUpperCase() + label.slice(1) };
-    });
-  }, []);
-
   useEffect(() => {
     if (!selectedCups) return;
     fetchConsumption(selectedCups, selectedMonth);
@@ -164,7 +153,7 @@ export default function Dashboard() {
     }
   }, [presentationMode]);
 
-  const slideCount = 4 + ADVANCED_ANALYTICS_CARD_COUNT;
+  const slideCount = 9;
 
   function renderPresentationSlide() {
     if (currentSlide === 0) {
@@ -197,7 +186,7 @@ export default function Dashboard() {
         </div>
       );
     }
-    if (currentSlide >= 3 && currentSlide < 3 + ADVANCED_ANALYTICS_CARD_COUNT) {
+    if (currentSlide >= 3 && currentSlide <= 7) {
       return (
         <div className="space-y-3">
           <p className="text-xs text-slate-600">
@@ -267,19 +256,22 @@ export default function Dashboard() {
             )}
             
             <div className="flex items-center gap-1">
-              <select
+              <input
+                type="month"
                 className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-cyan-500"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 title="Filtrar por mes"
-              >
-                <option value="">Resumen anual (Últimos 12 meses)</option>
-                {monthOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              />
+              {selectedMonth && (
+                <button
+                  onClick={() => setSelectedMonth('')}
+                  className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs text-slate-600 hover:bg-slate-300"
+                  title="Ver último año completo"
+                >
+                  ✕
+                </button>
+              )}
             </div>
             <button
               onClick={() => setPresentationMode((value) => !value)}
